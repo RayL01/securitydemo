@@ -1,5 +1,8 @@
 package com.eay.securitydemo.config;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtAuthentificationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
+  private final UserDetailsService userDetailsService;
   @Override
   protected void doFilterInternal(
           @Nonnull HttpServletRequest request,
@@ -40,6 +44,10 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     }
     jwt = authHeader.substring(7);
     userEmail = jwtService.extractUsername(jwt);//todo: extract the exact userEmail from jwt token
+    if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
+      //user is not authenticated yet
+      UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+    }
 
   }
 }
