@@ -1,8 +1,10 @@
 package com.eay.securitydemo.config;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,7 +26,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @RequiredArgsConstructor
-public class JwtAuthentificationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
@@ -47,7 +49,20 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
       //user is not authenticated yet
       UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+      if(jwtService.isTokenValid(jwt, userDetails)){
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+
+        );
+        authenticationToken.setDetails(
+                new WebAuthenticationDetailsSource().buildDetails(request)
+        );
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+      }
     }
+    filterChain.doFilter(request, response);
 
   }
 }
